@@ -226,10 +226,26 @@
                     allCombinedText += await extractTextFromPDF(file) + "\n\n";
                 }
 
-                const systemAdjustment = "【重要指示】出力結果が「AIが生成したような定型文や解説、前置き、まとめの挨拶」にならないようにしてください。余計な解説やAIチックな文章は一切排除し、利用者が指定したプロンプトで指示した内容だけを出力してください。";
-                const prompt = `${systemAdjustment}\n\n利用者の指示:\n${instruction}\n\n【対象のテキストデータ】\n${allCombinedText}`;
+                // AIStudio等のSystem Instruction（役割定義）に近い、標準的でエラーの起きにくいプロンプト構造に改善
+                const prompt = `あなたは無駄な装飾を一切省いて回答する、実用的なデータ抽出・要約専門のアシスタントです。
 
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+【絶対に遵守すべき禁止事項】
+・挨拶（「はじめまして」「こんにちは」など）は一切出力しないでください。
+・前置き（「以下が要約です」「承知いたしました」など）は一切出力しないでください。
+・締めくくりの言葉（「以上です」「お役に立てれば幸いです」など）は一切出力しないでください。
+・AIとしての解説、言い訳、定型文は一切出力しないでください。
+
+【実行する指示】
+利用者の指示に従い、対象テキストデータから「指示された内容だけ」を直接出力してください。
+
+利用者の指示：
+${instruction}
+
+対象テキストデータ：
+${allCombinedText}`;
+
+                // 一時的な混雑回避のため、安定性の高いAPIエンドポイント(v1)と、より軽量な安定版モデルへ安全にリクエスト
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -242,6 +258,9 @@
                 if (data.candidates && data.candidates[0].content.parts[0].text) {
                     currentOutputText = data.candidates[0].content.parts[0].text;
                     outputDiv.textContent = currentOutputText; 
+                } else if (data.error) {
+                    outputDiv.innerHTML = `<span style="color:red;">APIエラー (${data.error.code}): ${data.error.message}</span>`;
+                    console.error(data.error);
                 } else {
                     outputDiv.innerHTML = '<span style="color:red;">エラー: AIからの応答を解析できませんでした。APIキーやプロンプトを確認してください。</span>';
                     console.error(data);
