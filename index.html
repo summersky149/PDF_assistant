@@ -120,6 +120,55 @@
             width: auto;
         }
         .save-btn:hover { background-color: #45474a; }
+        
+        .help-icon-wrapper {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .help-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #7f8c8d;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .tooltip-text {
+            visibility: hidden;
+            width: 320px;
+            background-color: #2c3e50;
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 15px;
+            position: absolute;
+            z-index: 10;
+            bottom: 125%;
+            right: 0;
+            opacity: 0;
+            transition: opacity 0.2s, visibility 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: normal;
+        }
+        .help-icon-wrapper:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        .tooltip-text strong {
+            color: #f1c40f;
+            display: block;
+            margin-top: 8px;
+        }
+        .tooltip-text strong:first-child {
+            margin-top: 0;
+        }
     </style>
 </head>
 <body>
@@ -141,7 +190,7 @@
         <div id="fileList" class="file-list"></div>
         
         <label for="instruction" style="margin-top: 15px;">AIへの指示（プロンプト）</label>
-        <textarea id="instruction" rows="4">以下のPDFファイルの内容を読み込み、重要なポイントを箇条書きで分かりやすくまとめてください。</textarea>
+        <textarea id="instruction" rows="4">以下のPDFファイルの内容を読み込み、重要なポイントを箇定書きで分かりやすくまとめてください。</textarea>
         
         <button id="processBtn" onclick="processPDFs()">
             <div id="btnSpinner" class="spinner"></div>
@@ -150,7 +199,23 @@
     </div>
 
     <div class="section">
-        <label>生成結果</label>
+        <div class="label-container">
+            <label>生成結果</label>
+            <div class="help-icon-wrapper">
+                <div class="help-icon">?</div>
+                <div class="tooltip-text">
+                    <strong>【エラーが出る場合の原因と対処法】</strong>
+                    <strong>1. 一時的な混雑 (503エラーなど)</strong>
+                    Google側のサーバーが一時的に混雑している場合に発生します。数分時間を置いてから再度実行してください。
+                    <strong>2. ファイルのデータ問題</strong>
+                    文字が一切入っていない空のPDFや、特殊な形式で保護・作成されたPDFを読み込むと、AIがデータを解析できずエラーになることがあります。別のPDFでお試しいただくか、PDFクリーンアップツールで変換してから再度読み込んでください。
+                    <strong>3. APIキーの間違い・制限</strong>
+                    入力したGemini APIキーの最初や最後に余計なスペース（空白）が入っていないか、またはキーが無効化されていないかご確認ください。
+                    <strong>4. 短時間のリクエスト過多</strong>
+                    無料APIの場合、短時間で過剰に要求するとしばらくの間使えなくなります。
+                </div>
+            </div>
+        </div>
         <div id="output">ここに結果が表示されます。</div>
         <div class="action-area">
             <button class="save-btn" onclick="saveAsTxt()">名前を付けて保存 (.txt)</button>
