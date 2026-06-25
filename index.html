@@ -23,6 +23,33 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             position: relative;
         }
+        .drop-zone {
+            border: 2px dashed #1a73e8;
+            padding: 30px 20px;
+            border-radius: 8px;
+            background-color: #f8fafc;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .drop-zone.drag-over {
+            background-color: #e8f0fe;
+            border-color: #1557b0;
+        }
+        .drop-zone p {
+            margin: 0 0 10px 0;
+            color: #4a5568;
+            font-weight: bold;
+        }
+        .file-select-btn {
+            display: inline-block;
+            background-color: #edf2f7;
+            color: #4a5568;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            border: 1px solid #cbd5e0;
+        }
         .label-container {
             display: flex;
             justify-content: space-between;
@@ -53,7 +80,7 @@
         textarea::placeholder {
             color: #bbb;
         }
-        button {
+        .action-btn {
             background-color: #1a73e8;
             color: white;
             border: none;
@@ -67,10 +94,11 @@
             align-items: center;
             gap: 10px;
             transition: background-color 0.2s;
+            margin-top: 15px;
         }
-        button:hover { background-color: #1557b0; }
-        button:disabled { background-color: #a0c2f3; cursor: not-allowed; }
-        .file-list { margin-top: 10px; font-size: 14px; color: #555; }
+        .action-btn:hover { background-color: #1557b0; }
+        .action-btn:disabled { background-color: #a0c2f3; cursor: not-allowed; }
+        .file-list { margin-top: 15px; font-size: 14px; color: #555; }
         #output {
             white-space: pre-wrap;
             background: #f8f9fa;
@@ -189,14 +217,18 @@
     </div>
 
     <div class="section">
-        <label for="pdfFiles">PDFファイル（複数選択可）</label>
-        <input type="file" id="pdfFiles" accept=".pdf" multiple>
+        <label style="display: block; margin-bottom: 8px;">PDFファイル</label>
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('pdfFiles').click()">
+            <p>ここにPDFファイルをドラッグ＆ドロップ</p>
+            <span class="file-select-btn">またはファイルを選択（複数可）</span>
+            <input type="file" id="pdfFiles" accept=".pdf" multiple style="display: none;">
+        </div>
         <div id="fileList" class="file-list"></div>
         
-        <label for="instruction" style="margin-top: 15px;">AIへの指示（プロンプト）</label>
+        <label for="instruction" style="margin-top: 15px; display: block;">AIへの指示（プロンプト）</label>
         <textarea id="instruction" rows="4" placeholder="以下のPDFファイルの内容を読み込み、重要なポイントを箇定書きで分かりやすくまとめてください。"></textarea>
         
-        <button id="processBtn" onclick="processPDFs()">
+        <button id="processBtn" class="action-btn" onclick="processPDFs()">
             <div id="btnSpinner" class="spinner"></div>
             <span id="btnText">PDFを分析して実行</span>
         </button>
@@ -230,19 +262,49 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
         const fileInput = document.getElementById('pdfFiles');
+        const dropZone = document.getElementById('dropZone');
         const fileListDiv = document.getElementById('fileList');
+        let selectedFiles = [];
         let currentOutputText = "";
 
-        fileInput.addEventListener('change', () => {
+        function updateFileList() {
             fileListDiv.innerHTML = '';
-            if (fileInput.files.length > 0) {
+            if (selectedFiles.length > 0) {
                 const ul = document.createElement('ul');
-                for (let file of fileInput.files) {
+                for (let file of selectedFiles) {
                     const li = document.createElement('li');
                     li.textContent = `${file.name} (${(file.size/1024/1024).toFixed(2)} MB)`;
                     ul.appendChild(li);
                 }
                 fileListDiv.appendChild(ul);
+            }
+        }
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                selectedFiles = Array.from(fileInput.files);
+                updateFileList();
+            }
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            
+            const files = Array.from(e.dataTransfer.files).filter(file => file.type === "application/pdf" || file.name.toLowerCase().endsWith('.pdf'));
+            
+            if (files.length > 0) {
+                selectedFiles = files;
+                updateFileList();
             }
         });
 
@@ -270,7 +332,6 @@
 
         async function processPDFs() {
             const apiKey = document.getElementById('apiKey').value.trim();
-            const files = fileInput.files;
             let instruction = document.getElementById('instruction').value.trim();
             if (!instruction) {
                 instruction = "以下のPDFファイルの内容を読み込み、重要なポイントを箇定書きで分かりやすくまとめてください。";
@@ -285,8 +346,8 @@
                 alert('Gemini APIキーを入力してください。');
                 return;
             }
-            if (files.length === 0) {
-                alert('PDFファイルを1つ以上選択してください。');
+            if (selectedFiles.length === 0) {
+                alert('PDFファイルを1つ以上選択またはドロップしてください。');
                 return;
             }
 
@@ -303,7 +364,7 @@
 
                 const contentsParts = [];
 
-                for (let file of files) {
+                for (let file of selectedFiles) {
                     const pageImages = await convertPdfToImages(file);
                     
                     for (let index = 0; index < pageImages.length; index++) {
