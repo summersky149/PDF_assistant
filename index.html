@@ -48,6 +48,10 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             margin-bottom: 10px;
+            color: #333;
+        }
+        textarea::placeholder {
+            color: #bbb;
         }
         button {
             background-color: #1a73e8;
@@ -190,7 +194,7 @@
         <div id="fileList" class="file-list"></div>
         
         <label for="instruction" style="margin-top: 15px;">AIへの指示（プロンプト）</label>
-        <textarea id="instruction" rows="4">ex:以下のPDFファイルの内容を読み込み、重要なポイントを箇定書きで分かりやすくまとめてください。</textarea>
+        <textarea id="instruction" rows="4" placeholder="以下のPDFファイルの内容を読み込み、重要なポイントを箇定書きで分かりやすくまとめてください。"></textarea>
         
         <button id="processBtn" onclick="processPDFs()">
             <div id="btnSpinner" class="spinner"></div>
@@ -267,7 +271,10 @@
         async function processPDFs() {
             const apiKey = document.getElementById('apiKey').value.trim();
             const files = fileInput.files;
-            const instruction = document.getElementById('instruction').value.trim();
+            let instruction = document.getElementById('instruction').value.trim();
+            if (!instruction) {
+                instruction = "以下のPDFファイルの内容を読み込み、重要なポイントを箇定書きで分かりやすくまとめてください。";
+            }
             const outputDiv = document.getElementById('output');
             
             const btn = document.getElementById('processBtn');
@@ -291,7 +298,7 @@
                 outputDiv.innerHTML = `
                     <div class="loading-status">
                         <div class="status-spinner"></div>
-                        <span>処理中…(1～2分かかります)</span>
+                        <span>処理中…(1～2分かかる場合があります)</span>
                     </div>`;
 
                 const contentsParts = [];
