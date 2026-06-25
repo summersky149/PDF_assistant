@@ -190,7 +190,7 @@
         <div id="fileList" class="file-list"></div>
         
         <label for="instruction" style="margin-top: 15px;">AIへの指示（プロンプト）</label>
-        <textarea id="instruction" rows="4">以下のPDFファイルの内容を読み込み、重要なポイントを箇定書きで分かりやすくまとめてください。</textarea>
+        <textarea id="instruction" rows="4">ex:以下のPDFファイルの内容を読み込み、重要なポイントを箇定書きで分かりやすくまとめてください。</textarea>
         
         <button id="processBtn" onclick="processPDFs()">
             <div id="btnSpinner" class="spinner"></div>
@@ -286,7 +286,7 @@
             try {
                 btn.disabled = true;
                 btnSpinner.style.display = 'block';
-                btnText.textContent = '処理中…(1～2分かかります)';
+                btnText.textContent = '処理中…(1～2分かかる場合があります)';
 
                 outputDiv.innerHTML = `
                     <div class="loading-status">
